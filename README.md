@@ -1,22 +1,16 @@
-# echo-bot
+# eventboybot
+This bot aims to meet your event planning needs. 
+In the first iteration/version, we are working on a bot that returns common datetime intervals from a set of datetime intervals labelled with usernames. We have decided to connect the bot to the Telegram service using an Azure bot service backend.
 
-to test and demonstrate the capabilities of the Microsoft Bot Framework; a simple bot that echoes all messages sent to it.
 
-This bot has been created using [Bot Framework](https://dev.botframework.com), it shows how to create a simple bot that accepts input from the user and echoes it back.
+This bot has been created using [Bot Framework](https://dev.botframework.com).
 
-## Prerequisites
-
-This sample **requires** prerequisites in order to run.
-
-### Install Python 3.6
-
-## Running the sample
+## Running the bot
 - Run `pip install -r requirements.txt` to install all dependencies
 - Run `python app.py`
-
+- Now, the bot is running on localhost:3978
 
 ## Testing the bot using Bot Framework Emulator
-
 [Bot Framework Emulator](https://github.com/microsoft/botframework-emulator) is a desktop application that allows bot developers to test and debug their bots on localhost or running remotely through a tunnel.
 
 - Install the Bot Framework Emulator version 4.3.0 or greater from [here](https://github.com/Microsoft/BotFramework-Emulator/releases)
@@ -25,6 +19,10 @@ This sample **requires** prerequisites in order to run.
 
 - Launch Bot Framework Emulator
 - Enter a Bot URL of `http://localhost:3978/api/messages`
+
+## Deploying the bot on Azure
+- [deploying on azure](https://docs.microsoft.com/en-us/azure/bot-service/bot-builder-deploy-az-cli?view=azure-bot-service-4.0&tabs=csharp)
+- Note that for now, contributors need only be concerned with making pull requests to this repo. The core team of makimakers will manage the deployment of the bot on Azure.
 
 
 ## Further reading
