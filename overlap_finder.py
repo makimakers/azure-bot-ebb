@@ -149,33 +149,83 @@ def find_overlap(interval_a, interval_b):
     return Interval(common_begin, common_end)
 
 
-def print_common_dt_intervals(overlap_dict):
-    print("available common datetime intervals:\n")
-    # tup is the tuple representing the common interval, userid_set is set of the user data
+def format_overlaps(overlap_dict):
+    fstring = "available common datetime intervals:\n"
+    
     for overlap, userid_set in overlap_dict.items():
-        print(overlap.begin.strftime('%Y-%b-%d %H%M') + " - " + overlap.end.strftime('%Y-%b-%d %H%M') + ": ")
-        print("\tuserids: " + str(userid_set))
-    print()
+        fstring = fstring + overlap.begin.strftime('%Y-%b-%d:%H%M') + " to "\
+        + overlap.end.strftime('%Y-%b-%d:%H%M') + ":\n"\
+        + "\tuserids: " + str(userid_set) + "\n"
+    
+    return fstring
 
 
-tc_counter = 1
+def test_algo(tc, tprint=False):
+    """
+    prints output of find_all_common_intervals(tc) for inspection.
 
-def test_algo(tc):
-    global tc_counter
-    print(tc_counter)
-    tc_counter = tc_counter + 1
+    :param tc: list of Intervals of Datetimes.
+    :param tprint: boolean. Whether to format datetime into string.
+    """
     overlap_dict = find_all_common_intervals(tc)
-    for items in overlap_dict.items():
-        print(items)
+    if tprint == True:
+        to_print = format_overlaps(overlap_dict)
+        print(to_print)
+    else:
+        for items in overlap_dict.items():
+            print(items)
     print()
 
 
-test_algo(tc_1)
-test_algo(tc_2)
-test_algo(tc_3)
-test_algo(tc_4)
-test_algo(tc_5)
-test_algo(tc_6)
-test_algo(tc_7)
-test_algo(tc_8)
-test_algo(tc_9)
+def run_tests():
+    test_algo(tc_1)
+    test_algo(tc_2)
+    test_algo(tc_3)
+    test_algo(tc_4)
+    test_algo(tc_5, tprint=True)
+    test_algo(tc_6, tprint=True)
+    test_algo(tc_7, tprint=True)
+    test_algo(tc_8, tprint=True)
+    test_algo(tc_9, tprint=True)
+
+
+def parse_dt_string(s):
+    """
+    parses a strictly formatted string into a list of datetime interval objects.
+    
+    expected format : "%d-%m-%Y:%H%M to %d-%m-%Y:%H%M NAME".
+    use ' ; ' as a separator between these labelled intervals.
+    see https://strftime.org/ for formatting directives.
+    
+    example:
+    "31-01-2018:2359 to 03-02-2018:1300 mel ; 03-02-2018:1900 to 03-02-2018:2130 jon"
+
+    :param s: string.
+    :returns: list of Intervals.
+    """
+    intervals = []
+    FORMAT = "%d-%m-%Y:%H%M"
+    lines = s.split(' ; ')
+    
+    for line in lines:
+        parts = line.split(' ')
+        print(parts)
+        start_str = parts[0].strip()
+        end_str = parts[2].strip()
+        name = parts[3].strip()
+
+        start_dt = dt.strptime(start_str, FORMAT)
+        end_dt = dt.strptime(end_str, FORMAT)
+        intervals.append(Interval(start_dt, end_dt, name))
+    return intervals
+
+
+# test_str = "31-01-2018:2359 to 03-02-2018:1300 mel ; " + \
+#     "03-02-2018:0900 to 03-02-2018:2130 jon ; " + \
+#     "03-02-2018:1900 to 03-02-2018:2330 tym"
+
+# dt_list = parse_dt_string(test_str)
+# for i in dt_list:
+#     print(i)
+
+# test_algo(dt_list, tprint=True)
