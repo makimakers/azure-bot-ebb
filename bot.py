@@ -10,11 +10,16 @@ class MyBot(ActivityHandler):
 
     async def on_message_activity(self, turn_context: TurnContext):
         
-        dt_list = overlap_finder.parse_dt_string(turn_context.activity.text)
-        overlap_dict = overlap_finder.find_all_common_intervals(dt_list)
-        to_print = overlap_finder.format_overlaps(overlap_dict)
+        try:
+            dt_list = overlap_finder.parse_dt_string(turn_context.activity.text)
+            overlap_dict = overlap_finder.find_all_common_intervals(dt_list)
+            print(overlap_dict)  # debugging statement.
+            to_print = overlap_finder.format_overlaps(overlap_dict)
+            await turn_context.send_activity(f"{to_print}")
+        except IndexError:
+            await turn_context.send_activity("format is incorrect. format should be like this:"\
+                + "'31-01-2018:2359 to 03-02-2018:1300 mel ; 03-02-2018:1200 to 03-02-2018:2130 jon'")
 
-        await turn_context.send_activity(f"{to_print}")
 
     async def on_members_added_activity(
         self,
