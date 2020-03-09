@@ -198,7 +198,7 @@ def parse_dt_string(s):
     see https://strftime.org/ for formatting directives.
     
     example:
-    "31-01-2018:2359 to 03-02-2018:1300 mel ; 03-02-2018:1900 to 03-02-2018:2130 jon"
+    "31-01-2018:2359 to 03-02-2018:1300 mel ; 03-02-2018:1200 to 03-02-2018:2130 jon"
 
     :param s: string.
     :returns: list of Intervals.
