@@ -20,7 +20,7 @@ class MyBot(ActivityHandler):
         except IndexError:
             # TODO: raise error message from parser instead of from this level.
             await turn_context.send_activity("format is incorrect. format should be like this:"\
-                + "'31-01-2018:2359 to 03-02-2018:1300 mel ; 03-02-2018:1200 to 03-02-2018:2130 jon'")
+                + "'mel, 02 feb, 1300+2h15m; jon, 02 feb, 1400+2h30m'")
 
 
     async def on_members_added_activity(

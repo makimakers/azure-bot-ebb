@@ -179,17 +179,17 @@ def format_overlaps(overlap_dict):
     """
     sorted_keys = sortby_start(overlap_dict.keys())
 
-    fstring = "Common date & times:\n\n"
+    fstring = "Common dates & times:\n\n"
     
     for interval in sorted_keys:
 
         userids = ", ".join(overlap_dict[interval])
 
         fstring = fstring + "\n\n"\
-        + interval.begin.strftime('%d %b, %H%M')\
+        + interval.begin.strftime('**%d %b, %H%M')\
         + " - "\
-        + interval.end.strftime('%d %b, %H%M') + ":\n\n"\
-        + "  userids: " + str(userids) + "\n\n"
+        + interval.end.strftime('%d %b, %H%M**') + ":\n\n"\
+        + "   userids: " + str(userids) + "\n\n"
     
     return fstring
 
@@ -216,9 +216,9 @@ def parse_dt_string(s):
     see https://strftime.org/ for formatting directives.
     
     example:
-    "mel, 02 feb, 1300+2h15m;
-    jon, 02 feb, 1400+2h30m;
-    tym, 02 feb, 1500+2h45m"
+    "andy, 02 feb, 1300+2h15m;
+    baron, 02 feb, 1400+2h30m;
+    charmaine, 02 feb, 1500+2h45m"
 
     :param s: string.
     :returns: list of Intervals.
