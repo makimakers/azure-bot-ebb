@@ -1,6 +1,10 @@
+import re
 from datetime import datetime as dt
+from datetime import timedelta
 from intervaltree import Interval, IntervalTree
 from warnings import warn
+
+# TODO: move test cases to another module.
 
 # one interval
 tc_0 = [Interval(1, 3, "aaron")]
@@ -149,18 +153,101 @@ def find_overlap(interval_a, interval_b):
     return Interval(common_begin, common_end)
 
 
+def sortby_start(interval_keys):
+    """
+    Sort keys based on start of interval, in ascending order
+    :param interval_keys: list of keys.
+    :return: sorted list.
+    """
+    ref = []
+    for interval in interval_keys:
+        ref.append(interval.begin)
+    zipped = zip(ref, interval_keys)
+    sorted_list = [x for _, x in sorted(zipped)]  # sorts based on ref.
+
+    return sorted_list
+
+
 def format_overlaps(overlap_dict):
-    # note that this renders v different on the Bot Emulator and on Telegram.
-    fstring = "available common datetime intervals:\n\n"
+    """
+    Formats a string representation of a dict where the key is a Datetime Interval
+    and the value is the set of associated user names.
+    Note that this renders v different on the Bot Emulator and on Telegram.
+
+    :param dict. key is Datetime Interval, value is set.
+    :return: string.
+    """
+    sorted_keys = sortby_start(overlap_dict.keys())
+
+    fstring = "Common date & times:\n\n"
     
-    for overlap, userid_set in overlap_dict.items():
+    for interval in sorted_keys:
+
+        userids = ", ".join(overlap_dict[interval])
+
         fstring = fstring + "\n\n"\
-        + overlap.begin.strftime('%Y-%b-%d:%H%M')\
-        + " to "\
-        + overlap.end.strftime('%Y-%b-%d:%H%M') + ":\n\n"\
-        + "  userids: " + str(userid_set) + "\n\n"
+        + interval.begin.strftime('%d %b, %H%M')\
+        + " - "\
+        + interval.end.strftime('%d %b, %H%M') + ":\n\n"\
+        + "  userids: " + str(userids) + "\n\n"
     
     return fstring
+
+
+def parse_dur(time_str):
+    regex = re.compile(r'((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?')
+    parts = regex.match(time_str)
+    if not parts:
+        return
+    parts = parts.groupdict()
+    time_params = {}
+    for (name, param) in parts.items():
+        if param:
+            time_params[name] = int(param)
+    return timedelta(**time_params)
+
+
+def parse_dt_string(s):
+    """
+    Parses a strictly formatted string into a list of datetime interval objects.
+    
+    expected format : "<NAME>, %d %b, %H%M + <HOURS>h<MINS>m".
+    use ';' as a separator between these labelled intervals.
+    see https://strftime.org/ for formatting directives.
+    
+    example:
+    "mel, 02 feb, 1300+2h15m;
+    jon, 02 feb, 1400+2h30m;
+    tym, 02 feb, 1500+2h45m"
+
+    :param s: string.
+    :returns: list of Intervals.
+    """
+    START_DT_FORMAT = "%d %b %H%M"
+    intervals = []
+
+    lines = s.split(';')  # unsure if \n works in msft bot framework or emulator...
+    # print(lines)
+    for line in lines:
+        parts = line.strip().split(',')
+        # print(f'parts: {parts}')
+
+        name = parts[0].strip()
+        start_date = parts[1].strip()
+        time_and_dur = parts[2].strip()
+        time_and_dur = time_and_dur.split('+')
+        time = time_and_dur[0].strip()
+        dur = time_and_dur[1].strip()
+        print(f'name:{name}, date:{start_date}, time:{time}, dur:{dur}')
+
+        start_dt_str = start_date + " " + time
+        start_dt = dt.strptime(start_dt_str, START_DT_FORMAT)
+        start_dt = start_dt.replace(year=dt.today().year)
+        tdelta = parse_dur(dur)
+        end_dt = start_dt + tdelta
+
+        intervals.append(Interval(start_dt, end_dt, name))
+    return intervals
 
 
 def test_algo(tc, tprint=False):
@@ -192,43 +279,13 @@ def run_tests():
     test_algo(tc_9, tprint=True)
 
 
-def parse_dt_string(s):
-    """
-    parses a strictly formatted string into a list of datetime interval objects.
-    
-    expected format : "%d-%m-%Y:%H%M to %d-%m-%Y:%H%M NAME".
-    use ' ; ' as a separator between these labelled intervals.
-    see https://strftime.org/ for formatting directives.
-    
-    example:
-    "31-01-2018:2359 to 03-02-2018:1300 mel ; 03-02-2018:1200 to 03-02-2018:2130 jon"
-
-    :param s: string.
-    :returns: list of Intervals.
-    """
-    intervals = []
-    FORMAT = "%d-%m-%Y:%H%M"
-    lines = s.split(' ; ')
-    
-    for line in lines:
-        parts = line.split(' ')
-        print(parts)
-        start_str = parts[0].strip()
-        end_str = parts[2].strip()
-        name = parts[3].strip()
-
-        start_dt = dt.strptime(start_str, FORMAT)
-        end_dt = dt.strptime(end_str, FORMAT)
-        intervals.append(Interval(start_dt, end_dt, name))
-    return intervals
-
-
-# test_str = "31-01-2018:2359 to 03-02-2018:1300 mel ; " + \
-#     "03-02-2018:0900 to 03-02-2018:2130 jon ; " + \
-#     "03-02-2018:1900 to 03-02-2018:2330 tym"
-
-# dt_list = parse_dt_string(test_str)
-# for i in dt_list:
+## Test datetime parser.
+# test_str = "mel , 02 feb, 1300 + 2h15m;"\
+#     + "jon, 02 feb , 1400+2h30m"
+#
+# results = parse_dt_string(test_str)
+# for i in results:
 #     print(i)
 
-# test_algo(dt_list, tprint=True)
+## Test common time finder algorithm.
+# test_algo(results, tprint=True)
