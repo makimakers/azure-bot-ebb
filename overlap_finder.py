@@ -86,7 +86,7 @@ def find_all_common_intervals(interval_list):
         other_intervals = find_other_intervals_which_overlap(interval_tree, interval)
         for other_interval in other_intervals:
             add_new_overlap_to_dict(interval, other_interval, overlap_dict)         
-         
+    # TODO: sort dict by start datetime.     
     return overlap_dict
 
 
@@ -150,12 +150,15 @@ def find_overlap(interval_a, interval_b):
 
 
 def format_overlaps(overlap_dict):
-    fstring = "available common datetime intervals:\n"
+    # note that this renders v different on the Bot Emulator and on Telegram.
+    fstring = "available common datetime intervals:\n\n"
     
     for overlap, userid_set in overlap_dict.items():
-        fstring = fstring + overlap.begin.strftime('%Y-%b-%d:%H%M') + " to "\
-        + overlap.end.strftime('%Y-%b-%d:%H%M') + ":\n"\
-        + "\tuserids: " + str(userid_set) + "\n"
+        fstring = fstring + "\n\n"\
+        + overlap.begin.strftime('%Y-%b-%d:%H%M')\
+        + " to "\
+        + overlap.end.strftime('%Y-%b-%d:%H%M') + ":\n\n"\
+        + "  userids: " + str(userid_set) + "\n\n"
     
     return fstring
 
