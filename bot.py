@@ -18,6 +18,7 @@ class MyBot(ActivityHandler):
             await turn_context.send_activity(f"{to_print}")
             
         except IndexError:
+            # TODO: raise error message from parser instead of from this level.
             await turn_context.send_activity("format is incorrect. format should be like this:"\
                 + "'31-01-2018:2359 to 03-02-2018:1300 mel ; 03-02-2018:1200 to 03-02-2018:2130 jon'")
 
