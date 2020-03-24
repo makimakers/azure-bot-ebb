@@ -2,11 +2,13 @@
 This bot aims to meet your event planning needs. 
 In the first iteration/version, we are working on a bot that returns common datetime intervals from a set of datetime intervals labelled with usernames. We have decided to connect the bot to the Telegram service using an Azure bot service backend.
 
+Trying to find a common time for a meeting? But everyone's schedule is so different? Let our bot do it automatically for you!
+![example screencap](imgs/showcase1.png "screencap of what the bot does (for now)!")
 
 This bot has been created using [Bot Framework](https://dev.botframework.com).
 
-## Running the bot
-- Run `pip install -r requirements.txt` to install all dependencies
+## Running the bot locally
+- Run `pip install -r requirements.txt` to install dependencies
 - Run `python app.py`
 - Now, the bot is running on localhost:3978
 
@@ -22,7 +24,7 @@ This bot has been created using [Bot Framework](https://dev.botframework.com).
 
 ## Deploying the bot on Azure
 - [deploying on azure](https://docs.microsoft.com/en-us/azure/bot-service/bot-builder-deploy-az-cli?view=azure-bot-service-4.0&tabs=csharp)
-- Note that for now, contributors need only be concerned with making pull requests to this repo. The core team of makimakers will manage the deployment of the bot on Azure.
+- Contributors need only be concerned with making pull requests to this repo. The core team of makimakers will manage the deployment of the bot on Azure.
 
 
 ## Further reading
