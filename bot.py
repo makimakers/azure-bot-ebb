@@ -30,7 +30,7 @@ class MyBot(ActivityHandler):
             if member_added.id != turn_context.activity.recipient.id:
                 await turn_context.send_activity("Hello and welcome!")
 
-    # TODO: add event handler for unrecognized activity to prevent bot from
+    # TODO: add event handler for unrecognized activity to prevent bot from..
     # crashing? There's a weird bug where @-mentioning the telegram bot will 
     # cause the bot to crash. Need to figure out what kind of activity that is, 
     # then we can catch the buggy behaviour.

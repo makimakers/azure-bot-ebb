@@ -178,6 +178,7 @@ def format_overlaps(overlap_dict):
     :return: string.
     """
     sorted_keys = sortby_start(overlap_dict.keys())
+    # TODO: include other sort options. e.g. sort by duration.
     lines = []
     lines.append("Common dates & times:\n\n")
     
@@ -241,7 +242,7 @@ def parse_dt_string(s):
             time_and_dur = time_and_dur.split('+')
             time = time_and_dur[0].strip()
             dur = time_and_dur[1].strip()
-            print(f'name:{name}, date:{start_date}, time:{time}, dur:{dur}')
+            # print(f'name:{name}, date:{start_date}, time:{time}, dur:{dur}')
 
             start_dt_str = start_date + " " + time
             start_dt = dt.strptime(start_dt_str, START_DT_FORMAT)
