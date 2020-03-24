@@ -178,18 +178,21 @@ def format_overlaps(overlap_dict):
     :return: string.
     """
     sorted_keys = sortby_start(overlap_dict.keys())
-
-    fstring = "Common dates & times:\n\n"
+    lines = []
+    lines.append("Common dates & times:\n\n")
     
     for interval in sorted_keys:
 
         userids = ", ".join(overlap_dict[interval])
+        dur = interval.end - interval.begin
+        dur_in_min = dur.total_seconds() / 60
 
-        fstring = fstring + "\n\n"\
-        + interval.begin.strftime('**%d %b, %H%M')\
-        + " - "\
-        + interval.end.strftime('%d %b, %H%M**') + ":\n\n"\
-        + "   userids: " + str(userids) + "\n\n"
+        lines.append(f"{interval.begin.strftime('**%d %b, %H%M')}"
+                     f" - {interval.end.strftime('%d %b, %H%M')}"
+                     f" ({dur_in_min:.0f}mins)**")
+
+        lines.append(f"   IDs: {str(userids)}")
+    fstring = "\n\n".join(lines)
     
     return fstring
 
@@ -227,26 +230,37 @@ def parse_dt_string(s):
     intervals = []
 
     lines = s.split(';')  # unsure if \n works in msft bot framework or emulator...
-    # print(lines)
-    for line in lines:
-        parts = line.strip().split(',')
-        # print(f'parts: {parts}')
 
-        name = parts[0].strip()
-        start_date = parts[1].strip()
-        time_and_dur = parts[2].strip()
-        time_and_dur = time_and_dur.split('+')
-        time = time_and_dur[0].strip()
-        dur = time_and_dur[1].strip()
-        print(f'name:{name}, date:{start_date}, time:{time}, dur:{dur}')
+    try:
+        for line in lines:
+            parts = line.strip().split(',')
 
-        start_dt_str = start_date + " " + time
-        start_dt = dt.strptime(start_dt_str, START_DT_FORMAT)
-        start_dt = start_dt.replace(year=dt.today().year)
-        tdelta = parse_dur(dur)
-        end_dt = start_dt + tdelta
+            name = parts[0].strip()
+            start_date = parts[1].strip()
+            time_and_dur = parts[2].strip()
+            time_and_dur = time_and_dur.split('+')
+            time = time_and_dur[0].strip()
+            dur = time_and_dur[1].strip()
+            print(f'name:{name}, date:{start_date}, time:{time}, dur:{dur}')
 
-        intervals.append(Interval(start_dt, end_dt, name))
+            start_dt_str = start_date + " " + time
+            start_dt = dt.strptime(start_dt_str, START_DT_FORMAT)
+
+            if dt.today().month > start_dt.month:
+                # user likely referring to next year
+                start_dt = start_dt.replace(year=dt.today().year+1)
+            else:
+                start_dt = start_dt.replace(year=dt.today().year)
+
+            tdelta = parse_dur(dur)
+            end_dt = start_dt + tdelta
+
+            intervals.append(Interval(start_dt, end_dt, name))
+    except IndexError:
+        message = ("Incorrect format.\n\nExample:\n\nbob, 02 feb, 1300+2h15m;\n\n"
+                   "joe, 02 feb, 1400 + 2h30m;\n\nsally, 02 feb, 1500 + 2h30m")
+        raise IndexError(message)
+
     return intervals
 
 

@@ -17,10 +17,8 @@ class MyBot(ActivityHandler):
             to_print = format_overlaps(overlap_dict)
             await turn_context.send_activity(f"{to_print}")
             
-        except IndexError:
-            # TODO: raise error message from parser instead of from this level.
-            await turn_context.send_activity("format is incorrect. format should be like this:"\
-                + "'mel, 02 feb, 1300+2h15m; jon, 02 feb, 1400+2h30m'")
+        except Exception as e:
+            await turn_context.send_activity(str(e))
 
 
     async def on_members_added_activity(
