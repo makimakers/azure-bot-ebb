@@ -26,6 +26,9 @@ This bot has been created using [Bot Framework](https://dev.botframework.com).
 - [deploying on azure](https://docs.microsoft.com/en-us/azure/bot-service/bot-builder-deploy-az-cli?view=azure-bot-service-4.0&tabs=csharp)
 - Contributors need only be concerned with making pull requests to this repo. The core team of makimakers will manage the deployment of the bot on Azure.
 
+## Workflow
+As a best practice, no pushing is allowed to the master branch, please `git config branch.master.pushRemote no_push` in your local repo.
+Any commits to master must be merged via a pull request. Pushing to non-master branches will be allowed. 
 
 ## Further reading
 
