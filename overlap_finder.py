@@ -1,4 +1,5 @@
 import re
+import dateutil.parser as dtp
 from datetime import datetime as dt
 from datetime import timedelta
 from intervaltree import Interval, IntervalTree
@@ -213,21 +214,25 @@ def parse_dur(time_str):
 
 def parse_dt_string(s):
     """
-    Parses a strictly formatted string into a list of datetime interval objects.
+    Parses a formatted string into a list of datetime interval objects.
     
-    expected format : "<NAME>, %d %b, %H%M + <HOURS>h<MINS>m".
-    use ';' as a separator between these labelled intervals.
-    see https://strftime.org/ for formatting directives.
-    
+    Expected format : "<NAME>, <DATE>, <TIME> + <HOURS>h<MINS>m".
+    For TIME, the hour and min MUST be separated by ':', e.g. "15:00".
+    Use ';' as a separator between labelled intervals.
+    The commas and semicolons are compulsory.
+
     example:
-    "andy, 02 feb, 1.00pm+2h15m;
-    baron, 02 feb, 2.00pm+2h30m;
-    charmaine, 02 feb, 1500+2h45m"
+    "andy, 02 feb, 1pm+2h15m;
+    baron, 02 feb, 2:00pm+2h30m;
+    charmaine, 02 feb, 15:00+2h45m"
+
+    known issues:
+    hours and mins MUST be separated by ':'(dateutil's default).
+    '%d%d%d%d' and '%d%d.%d%dpm', e.g. '1500' or '3.00', is not an accepted time format.
 
     :param s: string.
     :returns: list of Intervals.
     """
-    START_DT_FORMAT = "%d %b %I.%M%p"  # e.g. 30 Sep 7.30pm
     intervals = []
 
     lines = s.split(';')  # unsure if \n works in msft bot framework or emulator...
@@ -245,8 +250,11 @@ def parse_dt_string(s):
             # print(f'name:{name}, date:{start_date}, time:{time}, dur:{dur}')
 
             start_dt_str = start_date + " " + time
-            start_dt = dt.strptime(start_dt_str, START_DT_FORMAT)
+            start_dt = dtp.parse(start_dt_str)
+            if type(start_dt) != dt:
+                raise ValueError("date format not recognised.")
 
+            # set year
             if dt.today().month > start_dt.month:
                 # user likely referring to next year
                 start_dt = start_dt.replace(year=dt.today().year+1)
@@ -255,11 +263,15 @@ def parse_dt_string(s):
 
             tdelta = parse_dur(dur)
             end_dt = start_dt + tdelta
-
-            intervals.append(Interval(start_dt, end_dt, name))
+            interval = Interval(start_dt, end_dt, name)
+            print(interval)
+            intervals.append(interval)
     except IndexError:
-        message = ("Incorrect format.\n\nExample:\n\nbob, 02 feb, 1300+2h15m;\n\n"
-                   "joe, 02 feb, 1400 + 2h30m;\n\nsally, 02 feb, 1500 + 2h30m")
+        message = ("Expected format : '<NAME>, <DATE>, <TIME> + <HOURS>h<MINS>m'.\n\n"
+                   "For TIME, the hours and mins must be separated by ':'. "
+                   "If p, pm, a, am not specified, then time is assumed to be 24h.\n\n"
+                   "\n\nE.g.:\n\nbob, 02 feb, 1pm+2h15m;\n\n"
+                   "joe, 2 feb, 2:00p + 2h30m;\n\nsally, 02 feb, 15:00 + 2h30m")
         raise IndexError(message)
 
     return intervals
