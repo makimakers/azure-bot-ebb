@@ -220,14 +220,14 @@ def parse_dt_string(s):
     see https://strftime.org/ for formatting directives.
     
     example:
-    "andy, 02 feb, 1300+2h15m;
-    baron, 02 feb, 1400+2h30m;
+    "andy, 02 feb, 1.00pm+2h15m;
+    baron, 02 feb, 2.00pm+2h30m;
     charmaine, 02 feb, 1500+2h45m"
 
     :param s: string.
     :returns: list of Intervals.
     """
-    START_DT_FORMAT = "%d %b %H%M"
+    START_DT_FORMAT = "%d %b %I.%M%p"  # e.g. 30 Sep 7.30pm
     intervals = []
 
     lines = s.split(';')  # unsure if \n works in msft bot framework or emulator...
