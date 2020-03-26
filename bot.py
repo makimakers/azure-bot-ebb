@@ -13,7 +13,7 @@ class MyBot(ActivityHandler):
         try:
             dt_list = parse_dt_string(turn_context.activity.text)
             overlap_dict = find_all_common_intervals(dt_list)
-            print(overlap_dict)  # debugging statement.
+            # print(overlap_dict)  # debugging statement.
             to_print = format_overlaps(overlap_dict)
             await turn_context.send_activity(f"{to_print}")
             
