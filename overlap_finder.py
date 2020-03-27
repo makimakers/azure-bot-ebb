@@ -216,15 +216,15 @@ def parse_dt_string(s):
     """
     Parses a formatted string into a list of datetime interval objects.
     
-    Expected format : "<NAME>, <DATE>, <TIME> + <HOURS>h<MINS>m".
-    For TIME, the hour and min MUST be separated by ':', e.g. "15:00".
+    Expected format : "<NAME>: <DATE> <TIME> <ABSOLUTE or RELATIVE INTERVAL END>.
+    For TIME, the hour and min MUST be separated by ':', e.g. "15:00". not "15.00"
     Use ';' as a separator between labelled intervals.
-    The commas and semicolons are compulsory.
+    The colons and semicolons are compulsory.
 
     example:
-    "andy, 02 feb, 1pm+2h15m;
-    baron, 02 feb, 2:00pm+2h30m;
-    charmaine, 02 feb, 15:00+2h45m"
+    "andy: 02 feb, 1pm+2h15m;
+    baron: 02 feb, 2:00pm - 3:00pm;
+    charmaine: 2 feb 15:15-17:30"
 
     known issues:
     hours and mins MUST be separated by ':'(dateutil's default).
@@ -233,46 +233,82 @@ def parse_dt_string(s):
     :param s: string.
     :returns: list of Intervals.
     """
+    FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME> <INTERVAL END>'.\n\n"
+                  "For TIME, the hours and mins MUST be separated by ':' or time will "
+                  "not be parsed properly.\n\n"
+                  "If p, pm, a, am not specified, then TIME is assumed to be 24h.\n\n"
+                  "\n\nE.g.:\n\nBob: 02 feb 1pm + 2h15m;\n\n"
+                  "Joe: 2 feb 2:00pm-3:00pm;\n\nSally: 02 feb 15:00-17:00")
     intervals = []
 
-    lines = s.split(';')  # unsure if \n works in msft bot framework or emulator...
+    lines = s.split(';')  # separate lines of labelled datetime intervals.
 
     try:
+        # https://dateutil.readthedocs.io/en/stable/parser.html
+        parser_info = dtp.parserinfo(dayfirst=True)
         for line in lines:
-            parts = line.strip().split(',')
+            parts = line.strip().split(':', 1)
 
             name = parts[0].strip()
-            start_date = parts[1].strip()
-            time_and_dur = parts[2].strip()
-            time_and_dur = time_and_dur.split('+')
-            time = time_and_dur[0].strip()
-            dur = time_and_dur[1].strip()
-            # print(f'name:{name}, date:{start_date}, time:{time}, dur:{dur}')
+            interval_str = parts[1].strip()
 
-            start_dt_str = start_date + " " + time
-            start_dt = dtp.parse(start_dt_str)
-            if type(start_dt) != dt:
-                raise ValueError("date format not recognised.")
+            if interval_str.find('+') > 0:
+                # '+' was found implying relative end-time was specified.
+                interval_parts = interval_str.split('+')
+                datetime_str = interval_parts[0].strip()
+                dur_str = interval_parts[1].strip()
+                dur = parse_dur(dur_str)  # timedelta
+                start_dt_str = datetime_str
+                start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
 
-            # set year
-            if dt.today().month > start_dt.month:
-                # user likely referring to next year
-                start_dt = start_dt.replace(year=dt.today().year+1)
+                # auto set year
+                if dt.today().month > start_dt.month:
+                    # user likely referring to next year
+                    start_dt = start_dt.replace(year=dt.today().year+1)
+                else:
+                    start_dt = start_dt.replace(year=dt.today().year)
+                end_dt = start_dt + dur
+            elif interval_str.find('-') > 0:
+                # '-' was found implying absolute end-time was specified.
+                interval_parts = interval_str.split('-')
+                start_dt_str = interval_parts[0].strip()
+                start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
+
+                # determine is interval's end was specified as datetime or time.
+                end_str = interval_parts[1].strip()
+                if end_str.find(' ') > 0:
+                    # date was specified. e.g. '2 feb 13:00'
+                    end_dt_str = end_str
+                    end_dt = dtp.parse(end_dt_str, parserinfo=parser_info)
+                else:
+                    # only time was specified.
+                    if end_str.find('.') > 0:
+                        raise ValueError("no '.' allowed in time format.")
+                    tmp_dt = dtp.parse(end_str, parserinfo=parser_info)  # for time.
+                    end_dt = start_dt  # for base dt info, which will be replaced.
+                    if tmp_dt.hour < start_dt.hour:
+                        # end-time refers to next day.
+                        end_dt += timedelta(days=1)
+                    else:
+                        end_dt = end_dt.replace(hour=tmp_dt.hour, minute=tmp_dt.minute)
+
+                # auto set year
+                if dt.today().month > start_dt.month:
+                    # user likely referring to next year
+                    start_dt = start_dt.replace(year=dt.today().year + 1)
+                    end_dt = end_dt.replace(year=dt.today().year + 1)
+                else:
+                    start_dt = start_dt.replace(year=dt.today().year)
+                    end_dt = end_dt.replace(year=dt.today().year)
             else:
-                start_dt = start_dt.replace(year=dt.today().year)
+                raise ValueError(FORMAT_MSG)
 
-            tdelta = parse_dur(dur)
-            end_dt = start_dt + tdelta
             interval = Interval(start_dt, end_dt, name)
-            print(interval)
+            print(interval) # debugging statement
+            print()
             intervals.append(interval)
     except IndexError:
-        message = ("Expected format : '<NAME>, <DATE>, <TIME> + <HOURS>h<MINS>m'.\n\n"
-                   "For TIME, the hours and mins must be separated by ':'. "
-                   "If p, pm, a, am not specified, then time is assumed to be 24h.\n\n"
-                   "\n\nE.g.:\n\nbob, 02 feb, 1pm+2h15m;\n\n"
-                   "joe, 2 feb, 2:00p + 2h30m;\n\nsally, 02 feb, 15:00 + 2h30m")
-        raise IndexError(message)
+        raise IndexError(FORMAT_MSG)
 
     return intervals
 
