@@ -7,6 +7,14 @@ from warnings import warn
 
 # TODO: move test cases to another module.
 
+FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME> <INTERVAL END>'.\n\n"
+              "For TIME, the hours and mins MUST be separated by ':' or time will "
+              "be interpreted wrongly.\n\n\n\n"
+              "Example input:\n\nBob: 02 feb 10am + 2h15m;\n\n"
+              "Bob: 02 feb 13:00-16:30;\n\n"
+              "Joe: 2 feb 2:00pm-4:00pm;\n\n"
+              "Sally: 02 feb 3:00p - 03 feb 1:00a")
+
 # one interval
 tc_0 = [Interval(1, 3, "aaron")]
 
@@ -175,7 +183,7 @@ def format_overlaps(overlap_dict):
     and the value is the set of associated user names.
     Note that this renders v different on the Bot Emulator and on Telegram.
 
-    :param dict. key is Datetime Interval, value is set.
+    :param overlap_dict. key is Datetime Interval, value is set of userids.
     :return: string.
     """
     sorted_keys = sortby_start(overlap_dict.keys())
@@ -233,12 +241,6 @@ def parse_dt_string(s):
     :param s: string.
     :returns: list of Intervals.
     """
-    FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME> <INTERVAL END>'.\n\n"
-                  "For TIME, the hours and mins MUST be separated by ':' or time will "
-                  "not be parsed properly.\n\n"
-                  "If p, pm, a, am not specified, then TIME is assumed to be 24h.\n\n"
-                  "\n\nE.g.:\n\nBob: 02 feb 1pm + 2h15m;\n\n"
-                  "Joe: 2 feb 2:00pm-3:00pm;\n\nSally: 02 feb 15:00-17:00")
     intervals = []
 
     lines = s.split(';')  # separate lines of labelled datetime intervals.
@@ -311,6 +313,15 @@ def parse_dt_string(s):
         raise IndexError(FORMAT_MSG)
 
     return intervals
+
+
+def help_msg():
+    msg = ("Hi! I can help you calculate common time slots from a list of free time "
+           "slots associated w each named person. As long as 2 or more persons "
+           "have a common time slot, I will show you the time slot. Please send me "
+           "a message with the following format. See example for valid formats!\n\n\n\n")
+
+    return msg + FORMAT_MSG
 
 
 def test_algo(tc, tprint=False):
