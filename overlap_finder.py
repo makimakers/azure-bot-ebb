@@ -7,13 +7,15 @@ from warnings import warn
 
 # TODO: move test cases to another module.
 
-FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME> <INTERVAL END>'.\n\n"
+FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME> <INTERVAL END>;'.\n\n"
               "For TIME, the hours and mins MUST be separated by ':' or time will "
-              "be interpreted wrongly.\n\n\n\n"
-              "Example input:\n\nBob: 02 feb 10am + 2h15m;\n\n"
-              "Bob: 02 feb 13:00-16:30;\n\n"
-              "Joe: 2 feb 2:00pm-4:00pm;\n\n"
-              "Sally: 02 feb 3:00p - 03 feb 1:00a")
+              "be interpreted wrongly.\n\n"
+              "Type 'example' for a formatted example input.\n\n")
+
+EXAMPLE_MSG = ("Bob: 02 feb 10:00 + 2h15m;\n\n"
+               "Bob: 02 feb 13:00-16:30;\n\n"
+               "Joe: 2 feb 2:00pm-4:00pm;\n\n"
+               "Sally: 02 feb 3:00p - 03 feb 1:00a")
 
 # one interval
 tc_0 = [Interval(1, 3, "aaron")]
@@ -197,8 +199,8 @@ def format_overlaps(overlap_dict):
         dur = interval.end - interval.begin
         dur_in_min = dur.total_seconds() / 60
 
-        lines.append(f"{interval.begin.strftime('**%d %b, %H%M')}"
-                     f" - {interval.end.strftime('%d %b, %H%M')}"
+        lines.append(f"{interval.begin.strftime('**%d %b, %I:%M%p')}"
+                     f" - {interval.end.strftime('%d %b, %I:%M%p')}"
                      f" ({dur_in_min:.0f}mins)**")
 
         lines.append(f"   IDs: {str(userids)}")
@@ -261,6 +263,8 @@ def parse_dt_string(s):
                 dur_str = interval_parts[1].strip()
                 dur = parse_dur(dur_str)  # timedelta
                 start_dt_str = datetime_str
+                if start_dt_str.find(':') < 0:
+                    raise ValueError(FORMAT_MSG)
                 start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
 
                 # auto set year
@@ -274,6 +278,8 @@ def parse_dt_string(s):
                 # '-' was found implying absolute end-time was specified.
                 interval_parts = interval_str.split('-')
                 start_dt_str = interval_parts[0].strip()
+                if start_dt_str.find(':') < 0:
+                    raise ValueError(FORMAT_MSG)
                 start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
 
                 # determine is interval's end was specified as datetime or time.
@@ -284,8 +290,8 @@ def parse_dt_string(s):
                     end_dt = dtp.parse(end_dt_str, parserinfo=parser_info)
                 else:
                     # only time was specified.
-                    if end_str.find('.') > 0:
-                        raise ValueError("no '.' allowed in time format.")
+                    if end_str.find(':') < 0:
+                        raise ValueError(FORMAT_MSG)
                     tmp_dt = dtp.parse(end_str, parserinfo=parser_info)  # for time.
                     end_dt = start_dt  # for base dt info, which will be replaced.
                     if tmp_dt.hour < start_dt.hour:
@@ -318,10 +324,14 @@ def parse_dt_string(s):
 def help_msg():
     msg = ("Hi! I can help you calculate common time slots from a list of free time "
            "slots associated w each named person. As long as 2 or more persons "
-           "have a common time slot, I will show you the time slot. Please send me "
-           "a message with the following format. See example for valid formats!\n\n\n\n")
+           "have a common time slot, I will show you their common time slots!."
+           "\n\n\n\n")
 
     return msg + FORMAT_MSG
+
+
+def example_msg():
+    return EXAMPLE_MSG
 
 
 def test_algo(tc, tprint=False):

@@ -14,6 +14,8 @@ class MyBot(ActivityHandler):
 
         if turn_context.activity.text in ['/help', 'help']:
             await turn_context.send_activity(of.help_msg())
+        elif turn_context.activity.text in ['/example', 'example', 'eg']:
+            await turn_context.send_activity(of.example_msg())
         else:
             try:
                 dt_list = of.parse_dt_string(turn_context.activity.text)
