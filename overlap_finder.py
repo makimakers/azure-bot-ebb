@@ -86,22 +86,27 @@ tc_9 = [
 ]        
 
 
-# Input: A list of Intervals
-# Output: A dictionary (key: overlap, value: set of user_ids which share the overlap)
 def find_all_common_intervals(interval_list):
+    """
+    Finds common intervals (overlapping regions) and labels common intervals with
+    intersecting intervals' data attribute (e.g. the user id)
+    :param interval_list: list of Interval objects
+    :return: a dict (key: Interval, value: set of user_ids which share that interval)
+    """
     overlap_dict = dict()
     interval_tree = IntervalTree(interval_list)
     
-    for interval in interval_tree.items(): # create a copy of the tree to iterate over
-        # check interval against overlap_dict
+    for interval in interval_tree.items():
+        # compare interval against overlap_dict's existing found overlaps
+        # because overlap_dict may have new intervals not in interval_tree.
         for overlap in overlap_dict.keys():
-            add_overlap_to_dict(overlap, interval, overlap_dict)
+            add_new_overlap_to_dict(overlap, interval, overlap_dict)
             
-        # check interval against other intervals in the tree to find overlapping regions
+        # compare interval against other intervals in the tree
         other_intervals = find_other_intervals_which_overlap(interval_tree, interval)
         for other_interval in other_intervals:
-            add_new_overlap_to_dict(interval, other_interval, overlap_dict)         
-    # TODO: sort dict by start datetime.     
+            add_new_overlap_to_dict(interval, other_interval, overlap_dict)
+
     return overlap_dict
 
 
@@ -133,6 +138,7 @@ def add_new_overlap_to_dict(interval_a, interval_b, overlap_dict):
 # Output: None
 # Pre-condition: interval.data is a user id
 def add_overlap_to_dict(overlap, current_interval, overlap_dict):
+    # this function seems redundant. TODO: investigate.
     common = find_overlap(overlap, current_interval)
     if common is None:
         return
@@ -174,9 +180,9 @@ def sortby_start(interval_keys):
     for interval in interval_keys:
         ref.append(interval.begin)
     zipped = zip(ref, interval_keys)
-    sorted_list = [x for _, x in sorted(zipped)]  # sorts based on ref.
+    sorted_keys = [x for _, x in sorted(zipped)]  # sorts based on ref.
 
-    return sorted_list
+    return sorted_keys
 
 
 def format_overlaps(overlap_dict):
