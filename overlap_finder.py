@@ -9,7 +9,8 @@ from warnings import warn
 FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME> <INTERVAL END>;'.\n\n"
               "For TIME, the hours and mins MUST be separated by ':' or time will "
               "be interpreted wrongly.\n\n"
-              "Type 'example' for a formatted example input.\n\n")
+              "Type 'example' for a formatted example input. Copy-paste example "
+              "input to see example output :).\n\n")
 
 EXAMPLE_MSG = ("Bob: 02 feb 10:00 + 2h15m;\n\n"
                "Bob: 02 feb 13:00-16:30;\n\n"
@@ -28,8 +29,13 @@ def find_all_common_intervals(interval_list):
     interval_tree = IntervalTree(interval_list)
     
     for interval in interval_tree.items():
+        for overlap in overlap_dict:
+            # compare interval against existing overlaps.
+            add_overlap_to_dict(interval, overlap, overlap_dict)
+
         other_intervals = find_other_intervals_which_overlap(interval_tree, interval)
         for other_interval in other_intervals:
+            # compare interval against other original intervals in the tree.
             add_new_overlap_to_dict(interval, other_interval, overlap_dict)
 
     return overlap_dict
@@ -51,8 +57,8 @@ def add_new_overlap_to_dict(interval_a, interval_b, overlap_dict):
     """
     Modifies overlap_dict to contain the overlapping region between interval_a and
     interval b.
-    :param interval_a: Interval
-    :param interval_b: Interval
+    :param interval_a: Interval whose data attribute is not None.
+    :param interval_b: Interval whose data attribute is not None.
     :param overlap_dict: dict where key is Interval representing overlap, value is set of
     data attributes associated with that overlap.
     :return:
@@ -65,7 +71,25 @@ def add_new_overlap_to_dict(interval_a, interval_b, overlap_dict):
         overlap_data = overlap_dict[overlap]
         overlap_data |= {interval_a.data, interval_b.data}  # update set
     else:
-        overlap_dict[overlap] = {interval_a.data, interval_b.data}
+        overlap_dict[overlap] = {interval_a.data, interval_b.data}  # create entry
+
+
+def add_overlap_to_dict(interval, overlap, overlap_dict):
+    """
+    Compare interval to existing overlap. Then modify overlap_dict.
+    :param interval: Interval whose data attribute is not None.
+    :param overlap: Interval that is in overlap_dict and whose data attribute is None.
+    :param overlap_dict: dict where key is Interval representing overlap, value is set of
+    data attributes associated with that overlap.
+    :return:
+    """
+    common = find_overlap(overlap, interval)
+    if common is None:
+        return
+
+    updated_set = {interval.data}
+    updated_set |= overlap_dict[overlap]
+    overlap_dict[common] = updated_set
 
 
 def find_overlap(interval_a, interval_b):
@@ -242,7 +266,7 @@ def parse_dt_string(s):
                 raise ValueError(FORMAT_MSG)
 
             interval = Interval(start_dt, end_dt, name)
-            print(interval) # debugging statement
+            print(interval)  # debugging statement
             print()
             intervals.append(interval)
     except IndexError:
@@ -262,4 +286,3 @@ def help_msg():
 
 def example_msg():
     return EXAMPLE_MSG
-
