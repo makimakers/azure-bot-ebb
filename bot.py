@@ -3,22 +3,29 @@
 
 from botbuilder.core import ActivityHandler, TurnContext
 from botbuilder.schema import ChannelAccount
-from overlap_finder import parse_dt_string, find_all_common_intervals, format_overlaps
+import overlap_finder as of
+
 
 class MyBot(ActivityHandler):
-    # See https://aka.ms/about-bot-activity-message to learn more about the message and other activity types.
+    # See https://aka.ms/about-bot-activity-message
+    # to learn more about the message and other activity types.
 
     async def on_message_activity(self, turn_context: TurnContext):
-        
-        try:
-            dt_list = parse_dt_string(turn_context.activity.text)
-            overlap_dict = find_all_common_intervals(dt_list)
-            # print(overlap_dict)  # debugging statement.
-            to_print = format_overlaps(overlap_dict)
-            await turn_context.send_activity(f"{to_print}")
-            
-        except Exception as e:
-            await turn_context.send_activity(str(e))
+
+        if turn_context.activity.text in ['/help', 'help']:
+            await turn_context.send_activity(of.help_msg())
+        elif turn_context.activity.text in ['/example', 'example', 'eg']:
+            await turn_context.send_activity(of.example_msg())
+        else:
+            try:
+                dt_list = of.parse_dt_string(turn_context.activity.text)
+                overlap_dict = of.find_all_common_intervals(dt_list)
+                # print(overlap_dict)  # debugging statement.
+                to_print = of.format_overlaps(overlap_dict)
+                await turn_context.send_activity(f"{to_print}")
+
+            except Exception as e:
+                await turn_context.send_activity(str(e))
 
 
     async def on_members_added_activity(
