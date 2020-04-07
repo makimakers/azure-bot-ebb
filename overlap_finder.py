@@ -32,7 +32,7 @@ def find_all_common_intervals(interval_list):
     interval_tree = IntervalTree(interval_list)
     
     for interval in interval_tree.items():
-        for overlap in overlap_dict:
+        for overlap in list(overlap_dict):
             # compare interval against existing overlaps.
             add_overlap_to_dict(interval, overlap, overlap_dict)
 
