@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from botbuilder.core import ActivityHandler, TurnContext
-from botbuilder.schema import ChannelAccount
+from botbuilder.schema import ChannelAccount, Activity
 import overlap_finder as of
 
 
@@ -12,16 +12,27 @@ class MyBot(ActivityHandler):
 
     async def on_message_activity(self, turn_context: TurnContext):
 
-        if turn_context.activity.text in ['/help', 'help']:
-            await turn_context.send_activity(of.help_msg())
-        elif turn_context.activity.text in ['/example', 'example', 'eg']:
-            await turn_context.send_activity(of.example_msg())
+        if turn_context.activity.text.lower() in ['/help', 'help']:
+            await turn_context.send_activity(Activity(type='message',
+                                                      text=of.help_msg(),
+                                                      text_format='xml'))
+        elif turn_context.activity.text.lower() in ['/example', 'example', 'eg']:
+            await turn_context.send_activity(Activity(type='message',
+                                                      text=of.example_msg(),
+                                                      text_format='xml'))
         else:
             try:
                 dt_list = of.parse_dt_string(turn_context.activity.text)
                 overlap_dict = of.find_all_common_intervals(dt_list)
                 to_print = of.format_overlaps(overlap_dict)
-                await turn_context.send_activity(f"{to_print}")
+                msg_activity = Activity(type='message', text=to_print,
+                                        text_format='xml')
+                # text_format='markdown' gives formatting issues w newlines.
+                # text_format='plain' auto becomes markdown in emulator. plain in Tele.
+                # text_format='xml' auto becomes plaintext in Telegram and emulator.
+                # note that with 'xml', anything encased in angular brackets are dropped.
+                # if argument to send_activity() is string, then markdown is assumed.
+                await turn_context.send_activity(msg_activity)
 
             except Exception as e:
                 await turn_context.send_activity(str(e))
