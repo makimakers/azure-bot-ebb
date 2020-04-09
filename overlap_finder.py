@@ -6,15 +6,15 @@ from intervaltree import Interval, IntervalTree
 from warnings import warn
 
 
-FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME SLOT>;'.\n\n"
+FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME SLOT>,'.\n\n"
               "For TIME, the hours and mins MUST be separated by ':' or time will "
               "be interpreted wrongly.\n\n"
               "Type 'example' for example input. Copy-paste example "
               "input to see example output :).\n\n")
 
-EXAMPLE_MSG = ("Bob: 02 feb 10:00 + 2h15m;\n\n"
-               "Bob: 02 feb 13:00-16:30;\n\n"
-               "Joe: 2 feb 2:00pm-4:00pm;\n\n"
+EXAMPLE_MSG = ("Bob: 02 feb 10:00 + 2h15m,\n\n"
+               "Bob: 02 feb 13:00-16:30,\n\n"
+               "Joe: 2 feb 2:00pm-4:00pm,\n\n"
                "Sally: 02 feb afternoon")
 
 GENERAL_TIMESLOTS = {'breakfast', 'brunch', 'lunch', 'dinner', 'supper', 'morning',
@@ -209,9 +209,9 @@ def parse_dt_string(s):
     The colons and semicolons are compulsory.
 
     example:
-    "andy: 02 feb 1pm+2h15m;
-    baron: 02 feb 2:00pm - 3:00pm;
-    charmaine: 2 feb 15:15-17:30;
+    "andy: 02 feb 1pm+2h15m,
+    baron: 02 feb 2:00pm - 3:00pm,
+    charmaine: 2 feb 15:15-17:30,
     dan: 2 feb afternoon"
 
     known issues:
@@ -224,12 +224,15 @@ def parse_dt_string(s):
     """
     intervals = []
 
-    lines = s.split(';')  # separate lines of labelled datetime intervals.
+    lines = s.split(',')  # separate lines of labelled datetime intervals.
 
     try:
         # https://dateutil.readthedocs.io/en/stable/parser.html
         parser_info = dtp.parserinfo(dayfirst=True)
         for line in lines:
+            print(line)
+            if line in ['']:
+                continue
             parts = line.strip().split(':', 1)
 
             name = parts[0].strip()
