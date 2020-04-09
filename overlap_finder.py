@@ -35,6 +35,8 @@ EXAMPLE_MSG = ("Amy-likes-12h:\n\n"
 GENERAL_TIMESLOTS = {'breakfast', 'brunch', 'lunch', 'dinner', 'supper', 'morning',
                      'afternoon', 'night'}
 
+ZERO_DUR = timedelta()
+
 
 def find_all_common_intervals(interval_list):
     """
@@ -83,7 +85,7 @@ def add_new_overlap_to_dict(interval_a, interval_b, overlap_dict):
     """
     if interval_a.data != interval_b.data:
         overlap = find_overlap(interval_a, interval_b)
-        if overlap is None or (overlap.end - overlap.begin) == 0:
+        if overlap is None or (overlap.end - overlap.begin) == ZERO_DUR:  # 0 duration
             return
 
         if overlap in overlap_dict.keys():
@@ -110,7 +112,7 @@ def add_overlap_to_dict(interval, overlap, overlap_dict):
         return
     else:
         common = find_overlap(overlap, interval)
-        if common is None or (common.end - common.begin) == 0:
+        if common is None or (common.end - common.begin) == ZERO_DUR:
             return
         overlap_dict[common] = updated_set
 
@@ -186,14 +188,15 @@ def format_overlaps(overlap_dict):
     lines.append("Common dates & times:\n\n")
     
     for interval in sorted_keys:
-
-        userids = ", ".join(overlap_dict[interval])
+        sorted_ids = sorted(overlap_dict[interval])
+        userids = ", ".join(sorted_ids)
         dur = interval.end - interval.begin
         dur_in_min = dur.total_seconds() / 60
+        dur_in_hours = dur_in_min / 60
 
         lines.append(f"{interval.begin.strftime('**%d %b, %I:%M%p')}"
                      f" - {interval.end.strftime('%d %b, %I:%M%p')}"
-                     f" ({dur_in_min:.0f}mins)**")
+                     f" ({dur_in_hours:.1f} hrs)**")
 
         lines.append(f"   IDs: {str(userids)}")
     fstring = "\n\n".join(lines)
@@ -301,19 +304,19 @@ def parse_dt_string(s):
                         raise ValueError(FORMAT_MSG)
                     elif timeslot == 'breakfast':
                         start_dt = start_dt.replace(hour=8)
-                        delta = timedelta(hours=3)
+                        delta = timedelta(hours=2,minutes=30)
                     elif timeslot == 'brunch':
                         start_dt = start_dt.replace(hour=11)
-                        delta = timedelta(hours=3)
+                        delta = timedelta(hours=2,minutes=30)
                     elif timeslot == 'lunch':
                         start_dt = start_dt.replace(hour=12)
-                        delta = timedelta(hours=3)
+                        delta = timedelta(hours=2,minutes=30)
                     elif timeslot == 'dinner':
                         start_dt = start_dt.replace(hour=18)
-                        delta = timedelta(hours=3)
+                        delta = timedelta(hours=2,minutes=30)
                     elif timeslot == 'supper':
                         start_dt = start_dt.replace(hour=21)
-                        delta = timedelta(hours=3)
+                        delta = timedelta(hours=2,minutes=30)
                     elif timeslot == 'morning':
                         start_dt = start_dt.replace(hour=8)
                         delta = timedelta(hours=4)
