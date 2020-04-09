@@ -66,15 +66,16 @@ def add_new_overlap_to_dict(interval_a, interval_b, overlap_dict):
     data attributes associated with that overlap.
     :return:
     """
-    overlap = find_overlap(interval_a, interval_b)
-    if overlap is None:
-        return
+    if interval_a.data != interval_b.data:
+        overlap = find_overlap(interval_a, interval_b)
+        if overlap is None or (overlap.end - overlap.begin) == 0:
+            return
 
-    if overlap in overlap_dict.keys():
-        overlap_data = overlap_dict[overlap]
-        overlap_data |= {interval_a.data, interval_b.data}  # update set
-    else:
-        overlap_dict[overlap] = {interval_a.data, interval_b.data}  # create entry
+        if overlap in overlap_dict.keys():
+            overlap_data = overlap_dict[overlap]
+            overlap_data |= {interval_a.data, interval_b.data}  # update set
+        else:
+            overlap_dict[overlap] = {interval_a.data, interval_b.data}  # create entry
 
 
 def add_overlap_to_dict(interval, overlap, overlap_dict):
@@ -86,13 +87,32 @@ def add_overlap_to_dict(interval, overlap, overlap_dict):
     data attributes associated with that overlap.
     :return:
     """
-    common = find_overlap(overlap, interval)
-    if common is None:
-        return
-
+    # TODO: return status code or overlap
     updated_set = {interval.data}
     updated_set |= overlap_dict[overlap]
-    overlap_dict[common] = updated_set
+    if is_contained(interval, overlap) and updated_set == overlap_dict[overlap]:
+        # because adding would be adding redundant information.
+        return
+    else:
+        common = find_overlap(overlap, interval)
+        if common is None or (overlap.end - overlap.begin) == 0:
+            return
+        overlap_dict[common] = updated_set
+
+
+def is_contained(interval_a: Interval, interval_b: Interval):
+    """
+    Returns True if interval_a is wholly contained by interval_b.
+    :param interval_a:
+    :param interval_b:
+    :return:
+    """
+    if interval_a.end > interval_b.end:
+        return False
+    elif interval_a.begin < interval_b.begin:
+        return False
+    else:
+        return True
 
 
 def find_overlap(interval_a, interval_b):
