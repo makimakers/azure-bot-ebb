@@ -3,9 +3,10 @@ This bot aims to meet your event planning needs. We plan to make this bot a one-
 We are now in v1 where the bot can compute common timeslots (labelled w names) given a list of available timeslots (that are labelled w names).
 
 Trying to find a common time for a meeting? But everyone's schedule is so different? Let our bot do it automatically for you!
-![example](imgs/showcase1.png "screencap of what the bot does (for now)!")
+<img src="imgs/showcase1.png" width="500" />
 
-<img src="imgs/showcase2-generaltimes.png" width="200" />
+Specify a general time if you wish, and we'll fill in the details :)
+<img src="imgs/showcase2-generaltimes.png" width="500" />
 
 This bot was created using [Bot Framework](https://dev.botframework.com).
 
