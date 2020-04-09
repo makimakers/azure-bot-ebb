@@ -6,16 +6,19 @@ from intervaltree import Interval, IntervalTree
 from warnings import warn
 
 
-FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME> <INTERVAL END>;'.\n\n"
+FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME SLOT>;'.\n\n"
               "For TIME, the hours and mins MUST be separated by ':' or time will "
               "be interpreted wrongly.\n\n"
-              "Type 'example' for a formatted example input. Copy-paste example "
+              "Type 'example' for example input. Copy-paste example "
               "input to see example output :).\n\n")
 
 EXAMPLE_MSG = ("Bob: 02 feb 10:00 + 2h15m;\n\n"
                "Bob: 02 feb 13:00-16:30;\n\n"
                "Joe: 2 feb 2:00pm-4:00pm;\n\n"
-               "Sally: 02 feb 3:00p - 03 feb 1:00a")
+               "Sally: 02 feb afternoon")
+
+GENERAL_TIMESLOTS = {'breakfast', 'brunch', 'lunch', 'dinner', 'supper', 'morning',
+                     'afternoon', 'night'}
 
 
 def find_all_common_intervals(interval_list):
@@ -29,7 +32,7 @@ def find_all_common_intervals(interval_list):
     interval_tree = IntervalTree(interval_list)
     
     for interval in interval_tree.items():
-        for overlap in overlap_dict:
+        for overlap in list(overlap_dict):
             # compare interval against existing overlaps.
             add_overlap_to_dict(interval, overlap, overlap_dict)
 
@@ -186,13 +189,15 @@ def parse_dt_string(s):
     The colons and semicolons are compulsory.
 
     example:
-    "andy: 02 feb, 1pm+2h15m;
-    baron: 02 feb, 2:00pm - 3:00pm;
-    charmaine: 2 feb 15:15-17:30"
+    "andy: 02 feb 1pm+2h15m;
+    baron: 02 feb 2:00pm - 3:00pm;
+    charmaine: 2 feb 15:15-17:30;
+    dan: 2 feb afternoon"
 
     known issues:
     hours and mins MUST be separated by ':'(dateutil's default).
     '%d%d%d%d' and '%d%d.%d%dpm', e.g. '1500' or '3.00', is not an accepted time format.
+    Will try to workaround this next time.
 
     :param s: string.
     :returns: list of Intervals.
@@ -263,7 +268,47 @@ def parse_dt_string(s):
                     start_dt = start_dt.replace(year=dt.today().year)
                     end_dt = end_dt.replace(year=dt.today().year)
             else:
-                raise ValueError(FORMAT_MSG)
+                interval_parts = interval_str.split()
+                timeslot = interval_parts[-1].strip().lower()
+                start_dt_str = interval_parts[0] + ' ' + interval_parts[1]
+                start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
+                start_dt = start_dt.replace(year=dt.today().year)
+                if timeslot not in GENERAL_TIMESLOTS:
+                    raise ValueError(FORMAT_MSG)
+                elif timeslot == 'breakfast':
+                    start_dt = start_dt.replace(hour=8)
+                    delta = timedelta(hours=3)
+                elif timeslot == 'brunch':
+                    start_dt = start_dt.replace(hour=11)
+                    delta = timedelta(hours=3)
+                elif timeslot == 'lunch':
+                    start_dt = start_dt.replace(hour=12)
+                    delta = timedelta(hours=3)
+                elif timeslot == 'dinner':
+                    start_dt = start_dt.replace(hour=18)
+                    delta = timedelta(hours=3)
+                elif timeslot == 'supper':
+                    start_dt = start_dt.replace(hour=21)
+                    delta = timedelta(hours=3)
+                elif timeslot == 'morning':
+                    start_dt = start_dt.replace(hour=8)
+                    delta = timedelta(hours=4)
+                elif timeslot == 'afternoon':
+                    start_dt = start_dt.replace(hour=12)
+                    delta = timedelta(hours=6)
+                elif timeslot == 'night':
+                    start_dt = start_dt.replace(hour=19)
+                    delta = timedelta(hours=5)
+                end_dt = start_dt + delta
+
+                # auto set year
+                if dt.today().month > start_dt.month:
+                    # user likely referring to next year
+                    start_dt = start_dt.replace(year=dt.today().year + 1)
+                    end_dt = end_dt.replace(year=dt.today().year + 1)
+                else:
+                    start_dt = start_dt.replace(year=dt.today().year)
+                    end_dt = end_dt.replace(year=dt.today().year)
 
             interval = Interval(start_dt, end_dt, name)
             print(interval)  # debugging statement
@@ -279,6 +324,8 @@ def help_msg():
     msg = ("Hi! I can help you calculate common time slots from a list of free time "
            "slots associated w each named person. As long as 2 or more persons "
            "have a common time slot, I will show you their common time slots!."
+           "\n\n"
+           "I can support some general timings such as 'brunch' or 'afternoon'."
            "\n\n\n\n")
 
     return msg + FORMAT_MSG
