@@ -66,15 +66,16 @@ def add_new_overlap_to_dict(interval_a, interval_b, overlap_dict):
     data attributes associated with that overlap.
     :return:
     """
-    overlap = find_overlap(interval_a, interval_b)
-    if overlap is None:
-        return
+    if interval_a.data != interval_b.data:
+        overlap = find_overlap(interval_a, interval_b)
+        if overlap is None:
+            return
 
-    if overlap in overlap_dict.keys():
-        overlap_data = overlap_dict[overlap]
-        overlap_data |= {interval_a.data, interval_b.data}  # update set
-    else:
-        overlap_dict[overlap] = {interval_a.data, interval_b.data}  # create entry
+        if overlap in overlap_dict.keys():
+            overlap_data = overlap_dict[overlap]
+            overlap_data |= {interval_a.data, interval_b.data}  # update set
+        else:
+            overlap_dict[overlap] = {interval_a.data, interval_b.data}  # create entry
 
 
 def add_overlap_to_dict(interval, overlap, overlap_dict):
