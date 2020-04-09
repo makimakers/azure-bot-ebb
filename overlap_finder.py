@@ -5,17 +5,32 @@ from datetime import timedelta
 from intervaltree import Interval, IntervalTree
 from warnings import warn
 
+HELP_MSG = ("Hi! I can help you find ALL the common time slots from a list of free time "
+            "slots tagged to each named person.\n\n\n\n")
 
-FORMAT_MSG = ("Expected format : '<NAME>: <DATE> <TIME SLOT>,'.\n\n"
-              "For TIME, the hours and mins MUST be separated by ':' or time will "
+FORMAT_MSG = ("Expected format:\n\n"
+              "'<NAME1>: <DATE> <TIME SLOT>, <DATE> <TIME SLOT>.\n\n"
+              "<NAME2>: <DATE> <TIME SLOT>, <DATE> <TIME SLOT>.'\n\n\n\n"
+              "For TIME, hours and mins MUST be separated by ':' or time will "
               "be interpreted wrongly.\n\n"
-              "Type 'example' for example input. Copy-paste example "
-              "input to see example output :).\n\n")
+              "Type 'example' for example input. Copy-paste example input to see what "
+              "I can do! You can specify ur timeslots in many ways :).\n\n")
 
-EXAMPLE_MSG = ("Bob: 02 feb 10:00 + 2h15m,\n\n"
-               "Bob: 02 feb 13:00-16:30,\n\n"
-               "Joe: 2 feb 2:00pm-4:00pm,\n\n"
-               "Sally: 02 feb afternoon")
+EXAMPLE_MSG = ("Amy-likes-12h:\n\n"
+               "1 may 1:00pm-4:30pm,\n\n"
+               "2 may 10:00am-12:00pm,\n\n"
+               "3 may 6:00pm-7:00pm.\n\n"
+               "Bob-is-Vague:\n\n"
+               "2 may afternoon,\n\n"
+               "2 may supper.\n\n"
+               "Cat-is-Soldier:\n\n"
+               "2 may 11:00-15:00,\n\n"
+               "2 may 19:00-20:00.\n\n"
+               "Dan-likes-Relativity:\n\n"
+               "2 may 13:00+2h30m.\n\n"
+               "Elf-is-American:\n\n"
+               "may 2 1:00pm-3:30pm."
+               )
 
 GENERAL_TIMESLOTS = {'breakfast', 'brunch', 'lunch', 'dinner', 'supper', 'morning',
                      'afternoon', 'night'}
@@ -95,7 +110,7 @@ def add_overlap_to_dict(interval, overlap, overlap_dict):
         return
     else:
         common = find_overlap(overlap, interval)
-        if common is None or (overlap.end - overlap.begin) == 0:
+        if common is None or (common.end - common.begin) == 0:
             return
         overlap_dict[common] = updated_set
 
@@ -202,141 +217,127 @@ def parse_dur(time_str):
 def parse_dt_string(s):
     """
     Parses a formatted string into a list of datetime interval objects.
-    
-    Expected format : "<NAME>: <DATE> <TIME> <ABSOLUTE or RELATIVE INTERVAL END>.
+
     For TIME, the hour and min MUST be separated by ':', e.g. "15:00". not "15.00"
-    Use ';' as a separator between labelled intervals.
-    The colons and semicolons are compulsory.
-
-    example:
-    "andy: 02 feb 1pm+2h15m,
-    baron: 02 feb 2:00pm - 3:00pm,
-    charmaine: 2 feb 15:15-17:30,
-    dan: 2 feb afternoon"
-
-    known issues:
-    hours and mins MUST be separated by ':'(dateutil's default).
-    '%d%d%d%d' and '%d%d.%d%dpm', e.g. '1500' or '3.00', is not an accepted time format.
-    Will try to workaround this next time.
+    See EXAMPLE for possible full formats.
 
     :param s: string.
     :returns: list of Intervals.
     """
     intervals = []
-
-    lines = s.split(',')  # separate lines of labelled datetime intervals.
-
+    # https://dateutil.readthedocs.io/en/stable/parser.html
+    parser_info = dtp.parserinfo(dayfirst=True)
     try:
-        # https://dateutil.readthedocs.io/en/stable/parser.html
-        parser_info = dtp.parserinfo(dayfirst=True)
-        for line in lines:
-            print(line)
-            if line in ['']:
+        groups = s.split('.')
+        for group in groups:
+            if group in ['']:
                 continue
-            parts = line.strip().split(':', 1)
-
-            name = parts[0].strip()
-            interval_str = parts[1].strip()
-
-            if interval_str.find('+') > 0:
-                # '+' was found implying relative end-time was specified.
-                interval_parts = interval_str.split('+')
-                datetime_str = interval_parts[0].strip()
-                dur_str = interval_parts[1].strip()
-                dur = parse_dur(dur_str)  # timedelta
-                start_dt_str = datetime_str
-                if start_dt_str.find(':') < 0:
-                    raise ValueError(FORMAT_MSG)
-                start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
-
-                # auto set year
-                if dt.today().month > start_dt.month:
-                    # user likely referring to next year
-                    start_dt = start_dt.replace(year=dt.today().year+1)
-                else:
-                    start_dt = start_dt.replace(year=dt.today().year)
-                end_dt = start_dt + dur
-            elif interval_str.find('-') > 0:
-                # '-' was found implying absolute end-time was specified.
-                interval_parts = interval_str.split('-')
-                start_dt_str = interval_parts[0].strip()
-                if start_dt_str.find(':') < 0:
-                    raise ValueError(FORMAT_MSG)
-                start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
-
-                # determine is interval's end was specified as datetime or time.
-                end_str = interval_parts[1].strip()
-                if end_str.find(' ') > 0:
-                    # date was specified. e.g. '2 feb 13:00'
-                    end_dt_str = end_str
-                    end_dt = dtp.parse(end_dt_str, parserinfo=parser_info)
-                else:
-                    # only time was specified.
-                    if end_str.find(':') < 0:
+            k, v = group.split(':', 1)
+            name = k.strip()
+            interval_strings = v.split(',')
+            for interval_str in interval_strings:
+                print(interval_str)
+                if interval_str in ['']:
+                    continue
+                if interval_str.find('+') > 0:
+                    # '+' was found implying relative end-time was specified.
+                    interval_parts = interval_str.split('+')
+                    datetime_str = interval_parts[0].strip()
+                    dur_str = interval_parts[1].strip()
+                    dur = parse_dur(dur_str)  # timedelta
+                    start_dt_str = datetime_str
+                    if start_dt_str.find(':') < 0:
                         raise ValueError(FORMAT_MSG)
-                    tmp_dt = dtp.parse(end_str, parserinfo=parser_info)  # for time.
-                    end_dt = start_dt  # for base dt info, which will be replaced.
-                    if tmp_dt.hour < start_dt.hour:
-                        # end-time refers to next day.
-                        end_dt += timedelta(days=1)
+                    start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
+
+                    # auto set year
+                    if dt.today().month > start_dt.month:
+                        # user likely referring to next year
+                        start_dt = start_dt.replace(year=dt.today().year+1)
                     else:
-                        end_dt = end_dt.replace(hour=tmp_dt.hour, minute=tmp_dt.minute)
+                        start_dt = start_dt.replace(year=dt.today().year)
+                    end_dt = start_dt + dur
+                elif interval_str.find('-') > 0:
+                    # '-' was found implying absolute end-time was specified.
+                    interval_parts = interval_str.split('-')
+                    start_dt_str = interval_parts[0].strip()
+                    if start_dt_str.find(':') < 0:
+                        raise ValueError(FORMAT_MSG)
+                    start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
 
-                # auto set year
-                if dt.today().month > start_dt.month:
-                    # user likely referring to next year
-                    start_dt = start_dt.replace(year=dt.today().year + 1)
-                    end_dt = end_dt.replace(year=dt.today().year + 1)
+                    # determine is interval's end was specified as datetime or time.
+                    end_str = interval_parts[1].strip()
+                    if end_str.find(' ') > 0:
+                        # date was specified. e.g. '2 feb 13:00'
+                        end_dt_str = end_str
+                        end_dt = dtp.parse(end_dt_str, parserinfo=parser_info)
+                    else:
+                        # only time was specified.
+                        if end_str.find(':') < 0:
+                            raise ValueError(FORMAT_MSG)
+                        tmp_dt = dtp.parse(end_str, parserinfo=parser_info)  # for time.
+                        end_dt = start_dt  # for base dt info, which will be replaced.
+                        if tmp_dt.hour < start_dt.hour:
+                            # end-time refers to next day.
+                            end_dt += timedelta(days=1)
+                        else:
+                            end_dt = end_dt.replace(hour=tmp_dt.hour, minute=tmp_dt.minute)
+
+                    # auto set year
+                    if dt.today().month > start_dt.month:
+                        # user likely referring to next year
+                        start_dt = start_dt.replace(year=dt.today().year + 1)
+                        end_dt = end_dt.replace(year=dt.today().year + 1)
+                    else:
+                        start_dt = start_dt.replace(year=dt.today().year)
+                        end_dt = end_dt.replace(year=dt.today().year)
                 else:
+                    interval_parts = interval_str.split()
+                    timeslot = interval_parts[-1].strip().lower()
+                    start_dt_str = interval_parts[0] + ' ' + interval_parts[1]
+                    start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
                     start_dt = start_dt.replace(year=dt.today().year)
-                    end_dt = end_dt.replace(year=dt.today().year)
-            else:
-                interval_parts = interval_str.split()
-                timeslot = interval_parts[-1].strip().lower()
-                start_dt_str = interval_parts[0] + ' ' + interval_parts[1]
-                start_dt = dtp.parse(start_dt_str, parserinfo=parser_info)
-                start_dt = start_dt.replace(year=dt.today().year)
-                if timeslot not in GENERAL_TIMESLOTS:
-                    raise ValueError(FORMAT_MSG)
-                elif timeslot == 'breakfast':
-                    start_dt = start_dt.replace(hour=8)
-                    delta = timedelta(hours=3)
-                elif timeslot == 'brunch':
-                    start_dt = start_dt.replace(hour=11)
-                    delta = timedelta(hours=3)
-                elif timeslot == 'lunch':
-                    start_dt = start_dt.replace(hour=12)
-                    delta = timedelta(hours=3)
-                elif timeslot == 'dinner':
-                    start_dt = start_dt.replace(hour=18)
-                    delta = timedelta(hours=3)
-                elif timeslot == 'supper':
-                    start_dt = start_dt.replace(hour=21)
-                    delta = timedelta(hours=3)
-                elif timeslot == 'morning':
-                    start_dt = start_dt.replace(hour=8)
-                    delta = timedelta(hours=4)
-                elif timeslot == 'afternoon':
-                    start_dt = start_dt.replace(hour=12)
-                    delta = timedelta(hours=6)
-                elif timeslot == 'night':
-                    start_dt = start_dt.replace(hour=19)
-                    delta = timedelta(hours=5)
-                end_dt = start_dt + delta
+                    if timeslot not in GENERAL_TIMESLOTS:
+                        raise ValueError(FORMAT_MSG)
+                    elif timeslot == 'breakfast':
+                        start_dt = start_dt.replace(hour=8)
+                        delta = timedelta(hours=3)
+                    elif timeslot == 'brunch':
+                        start_dt = start_dt.replace(hour=11)
+                        delta = timedelta(hours=3)
+                    elif timeslot == 'lunch':
+                        start_dt = start_dt.replace(hour=12)
+                        delta = timedelta(hours=3)
+                    elif timeslot == 'dinner':
+                        start_dt = start_dt.replace(hour=18)
+                        delta = timedelta(hours=3)
+                    elif timeslot == 'supper':
+                        start_dt = start_dt.replace(hour=21)
+                        delta = timedelta(hours=3)
+                    elif timeslot == 'morning':
+                        start_dt = start_dt.replace(hour=8)
+                        delta = timedelta(hours=4)
+                    elif timeslot == 'afternoon':
+                        start_dt = start_dt.replace(hour=12)
+                        delta = timedelta(hours=6)
+                    elif timeslot == 'night':
+                        start_dt = start_dt.replace(hour=19)
+                        delta = timedelta(hours=5)
+                    end_dt = start_dt + delta
 
-                # auto set year
-                if dt.today().month > start_dt.month:
-                    # user likely referring to next year
-                    start_dt = start_dt.replace(year=dt.today().year + 1)
-                    end_dt = end_dt.replace(year=dt.today().year + 1)
-                else:
-                    start_dt = start_dt.replace(year=dt.today().year)
-                    end_dt = end_dt.replace(year=dt.today().year)
+                    # auto set year
+                    if dt.today().month > start_dt.month:
+                        # user likely referring to next year
+                        start_dt = start_dt.replace(year=dt.today().year + 1)
+                        end_dt = end_dt.replace(year=dt.today().year + 1)
+                    else:
+                        start_dt = start_dt.replace(year=dt.today().year)
+                        end_dt = end_dt.replace(year=dt.today().year)
 
-            interval = Interval(start_dt, end_dt, name)
-            print(interval)  # debugging statement
-            print()
-            intervals.append(interval)
+                interval = Interval(start_dt, end_dt, name)
+                print(interval)  # debugging statement
+                print()
+                intervals.append(interval)
     except IndexError:
         raise IndexError(FORMAT_MSG)
 
@@ -344,14 +345,7 @@ def parse_dt_string(s):
 
 
 def help_msg():
-    msg = ("Hi! I can help you calculate common time slots from a list of free time "
-           "slots associated w each named person. As long as 2 or more persons "
-           "have a common time slot, I will show you their common time slots!."
-           "\n\n"
-           "I can support some general timings such as 'brunch' or 'afternoon'."
-           "\n\n\n\n")
-
-    return msg + FORMAT_MSG
+    return HELP_MSG + FORMAT_MSG
 
 
 def example_msg():
