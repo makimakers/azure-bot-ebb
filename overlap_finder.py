@@ -68,7 +68,7 @@ def add_new_overlap_to_dict(interval_a, interval_b, overlap_dict):
     """
     if interval_a.data != interval_b.data:
         overlap = find_overlap(interval_a, interval_b)
-        if overlap is None:
+        if overlap is None or (overlap.end - overlap.begin) == 0:
             return
 
         if overlap in overlap_dict.keys():
@@ -95,7 +95,7 @@ def add_overlap_to_dict(interval, overlap, overlap_dict):
         return
     else:
         common = find_overlap(overlap, interval)
-        if common is None:
+        if common is None or (overlap.end - overlap.begin) == 0:
             return
         overlap_dict[common] = updated_set
 
