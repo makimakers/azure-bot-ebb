@@ -6,29 +6,29 @@ from intervaltree import Interval, IntervalTree
 from warnings import warn
 
 HELP_MSG = ("Hi! I can help you find ALL the common time slots from a list of free time "
-            "slots tagged to each named person.\n\n\n\n")
+            "slots tagged to each named person.\n\n")
 
-FORMAT_MSG = ("Expected format:\n\n"
-              "'<NAME1>: <DATE> <TIME SLOT>, <DATE> <TIME SLOT>.\n\n"
-              "<NAME2>: <DATE> <TIME SLOT>, <DATE> <TIME SLOT>.'\n\n\n\n"
+FORMAT_MSG = ("Expected format:\n"
+              "NAME1: DATE TIME_SLOT1, DATE TIME_SLOT2.\n"
+              "NAME2: DATE TIME_SLOT1, DATE TIME_SLOT2.\n\n"
               "For TIME, hours and mins MUST be separated by ':' or time will "
-              "be interpreted wrongly.\n\n"
+              "be interpreted wrongly.\n"
               "Type 'example' for example input. Copy-paste example input to see what "
-              "I can do! You can specify ur timeslots in many ways :).\n\n")
+              "I can do! You can specify ur timeslots in many ways :).\n")
 
-EXAMPLE_MSG = ("Amy-likes-12h:\n\n"
-               "1 may 1:00pm-4:30pm,\n\n"
-               "2 may 10:00am-12:00pm,\n\n"
-               "3 may 6:00pm-7:00pm.\n\n"
-               "Bob-is-Vague:\n\n"
-               "2 may afternoon,\n\n"
-               "2 may supper.\n\n"
-               "Cat-is-Soldier:\n\n"
-               "2 may 11:00-15:00,\n\n"
-               "2 may 19:00-20:00.\n\n"
-               "Dan-likes-Relativity:\n\n"
-               "2 may 13:00+2h30m.\n\n"
-               "Elf-is-American:\n\n"
+EXAMPLE_MSG = ("Amy-likes-12h:\n"
+               "1 may 1:00pm-4:30pm,\n"
+               "2 may 10:00am-12:00pm,\n"
+               "3 may 6:00pm-7:00pm.\n"
+               "Bob-is-Vague:\n"
+               "2 may afternoon,\n"
+               "2 may supper.\n"
+               "Cat-is-Soldier:\n"
+               "2 may 11:00-15:00,\n"
+               "2 may 19:00-20:00.\n"
+               "Dan-likes-Relativity:\n"
+               "2 may 13:00+2h30m.\n"
+               "Elf-is-American:\n"
                "may 2 1:00pm-3:30pm."
                )
 
@@ -177,15 +177,16 @@ def format_overlaps(overlap_dict):
     """
     Formats a string representation of a dict where the key is a Datetime Interval
     and the value is the set of associated user names.
-    Note that this renders v different on the Bot Emulator and on Telegram.
+    Note that this renders v different on the Bot Emulator and on Telegram, depending
+    on the Activity.text_format field.
 
     :param overlap_dict. key is Datetime Interval, value is set of userids.
     :return: string.
     """
     sorted_keys = sortby_start(overlap_dict.keys())
     # TODO: include other sort options. e.g. sort by duration.
-    lines = []
-    lines.append("Common dates & times:\n\n")
+    blocks = []
+    header = "Common dates & times:\n"
     
     for interval in sorted_keys:
         sorted_ids = sorted(overlap_dict[interval])
@@ -194,13 +195,19 @@ def format_overlaps(overlap_dict):
         dur_in_min = dur.total_seconds() / 60
         dur_in_hours = dur_in_min / 60
 
-        lines.append(f"{interval.begin.strftime('**%d %b, %I:%M%p')}"
-                     f" - {interval.end.strftime('%d %b, %I:%M%p')}"
-                     f" ({dur_in_hours:.1f} hrs)**")
+        if interval.begin.date() == interval.end.date():
+            blocks.append(f"{interval.begin.strftime('**%d %b, %I:%M%p')}"
+                          f" - {interval.end.strftime('%I:%M%p')}"
+                          f" ({dur_in_hours:.1f}h)**\n")
+        else:
+            blocks.append(f"{interval.begin.strftime('**%d %b, %I:%M%p')}"
+                          f" - {interval.end.strftime('%d %b, %I:%M%p')}"
+                          f" ({dur_in_hours:.1f}h)**\n")
 
-        lines.append(f"   IDs: {str(userids)}")
-    fstring = "\n\n".join(lines)
-    
+        blocks[-1] = blocks[-1] + f"   ppl: {str(userids)}\n"
+    empty_line = "\n"
+    fstring = header + empty_line.join(blocks)
+
     return fstring
 
 
@@ -239,7 +246,6 @@ def parse_dt_string(s):
             name = k.strip()
             interval_strings = v.split(',')
             for interval_str in interval_strings:
-                print(interval_str)
                 if interval_str in ['']:
                     continue
                 if interval_str.find('+') > 0:
