@@ -87,13 +87,32 @@ def add_overlap_to_dict(interval, overlap, overlap_dict):
     data attributes associated with that overlap.
     :return:
     """
-    common = find_overlap(overlap, interval)
-    if common is None:
-        return
-
+    # TODO: return status code or overlap
     updated_set = {interval.data}
     updated_set |= overlap_dict[overlap]
-    overlap_dict[common] = updated_set
+    if is_contained(interval, overlap) and updated_set == overlap_dict[overlap]:
+        # because adding would be adding redundant information.
+        return
+    else:
+        common = find_overlap(overlap, interval)
+        if common is None:
+            return
+        overlap_dict[common] = updated_set
+
+
+def is_contained(interval_a: Interval, interval_b: Interval):
+    """
+    Returns True if interval_a is wholly contained by interval_b.
+    :param interval_a:
+    :param interval_b:
+    :return:
+    """
+    if interval_a.end > interval_b.end:
+        return False
+    elif interval_a.begin < interval_b.begin:
+        return False
+    else:
+        return True
 
 
 def find_overlap(interval_a, interval_b):
