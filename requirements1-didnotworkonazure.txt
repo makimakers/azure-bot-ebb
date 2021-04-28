@@ -7,7 +7,7 @@ attrs==19.3.0
 binaryornot==0.4.4
 botbuilder-core==4.7.1
 botbuilder-schema==4.7.1
-botframework-connector==4.7.1
+botframework-connector==4.7.2
 certifi==2019.11.28
 cffi==1.14.0
 chardet==3.0.4
